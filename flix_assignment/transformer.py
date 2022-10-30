@@ -1,8 +1,11 @@
 import json
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
+
+import pytz
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 from confluent_kafka import Producer
+import datetime
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -19,6 +22,7 @@ if __name__ == '__main__':
     config.update(config_parser['consumer'])
     consumer = Consumer(config)
 
+
     # Set up a callback to handle the '--reset' flag.
     def reset_offset(consumer, partitions):
         if args.reset:
@@ -26,12 +30,14 @@ if __name__ == '__main__':
                 p.offset = OFFSET_BEGINNING
             consumer.assign(partitions)
 
+
     def delivery_callback(err, msg):
         if err:
             print('ERROR: Message failed delivery: {}'.format(err))
         else:
             print("<= Produced event to topic '{topic}': key = {key:12} value = {value:12}".format(
                 topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
+
 
     # Subscribe to topic
     topic = "input_topic"
@@ -62,7 +68,17 @@ if __name__ == '__main__':
                 print(f"\n=> Read event from topic '{msg.topic()}':    key = {key:12} value = {value}")
 
                 if value['myTimestamp'] != '':
-                    print(f"Transform input timestamp: '{value['myTimestamp']}' to UTC")
+                    timestamp_format = '%Y-%m-%dT%H:%M:%S%z'
+                    try:
+                        input_datetime = datetime.datetime.strptime(value['myTimestamp'], timestamp_format)
+                        timestamp_utc = input_datetime.astimezone(pytz.UTC).strftime('%Y-%m-%dT%H:%M:%S') + '+00:00'
+                        print(f"* Transformed input timestamp: '{value['myTimestamp']}' "
+                              f"to UTC timestamp: '{timestamp_utc}'")
+                        value['myTimestamp'] = timestamp_utc
+                    except ValueError as message:
+                        print('* Unknown Datetime format, Skip UTC Conversion and retain value as it is.')
+                else:
+                    print('* Skip UTC Conversion as input date time is missing')
 
                 producer.produce(output_topic, json.dumps(value), key, callback=delivery_callback)
                 producer.poll()
