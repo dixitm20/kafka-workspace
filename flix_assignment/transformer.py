@@ -1,3 +1,4 @@
+import datetime
 import json
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
@@ -5,7 +6,6 @@ from configparser import ConfigParser
 import pytz
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 from confluent_kafka import Producer
-import datetime
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -23,7 +23,6 @@ if __name__ == '__main__':
     consumer = Consumer(config)
 
 
-    # Set up a callback to handle the '--reset' flag.
     def reset_offset(consumer, partitions):
         if args.reset:
             for p in partitions:
@@ -39,14 +38,12 @@ if __name__ == '__main__':
                 topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
 
 
-    # Subscribe to topic
     topic = "input_topic"
     consumer.subscribe([topic], on_assign=reset_offset)
 
     output_topic = "output_topic"
     max_continuous_wait_retry_count = 10
 
-    # Poll for new messages from Kafka and print them.
     try:
         continuous_wait_retry_count = 0
         while True:

@@ -11,5 +11,5 @@ JOB="${__parent_dir}/flix_assignment/transformer.py"
 CONFIG_FILE_PATH="${__parent_dir}/resources/conf/kafka-conf.ini"
 
 python ${JOB} ${CONFIG_FILE_PATH}
-# In case you want to reprocess the Input_topic from beginning then you can use the --reset flag as well
+# In case you want to reprocess the Input_topic from beginning then you can use the --reset flag as shown below (Instead of above line)
 # python ${JOB} ${CONFIG_FILE_PATH} --reset
