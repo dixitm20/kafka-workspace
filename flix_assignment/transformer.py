@@ -50,7 +50,7 @@ if __name__ == '__main__':
                     print(f"Exceeded max_continuous_wait_retry_count of: {max_continuous_wait_retry_count} & "
                           f"No new messages were found. Exiting Application.")
                     break
-                print(f"Waiting (continuous_wait_retry_count = {continuous_wait_retry_count})...")
+                print(f"\nWaiting (continuous_wait_retry_count = {continuous_wait_retry_count})...")
                 continuous_wait_retry_count += 1
             elif msg.error():
                 continuous_wait_retry_count = 0
@@ -60,6 +60,9 @@ if __name__ == '__main__':
                 key = msg.key().decode('utf-8')
                 value = json.loads(msg.value().decode('utf-8'))
                 print(f"\n=> Read event from topic '{msg.topic()}':    key = {key:12} value = {value}")
+
+                if value['myTimestamp'] != '':
+                    print(f"Transform input timestamp: '{value['myTimestamp']}' to UTC")
 
                 producer.produce(output_topic, json.dumps(value), key, callback=delivery_callback)
                 producer.poll()
